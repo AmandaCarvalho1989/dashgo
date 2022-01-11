@@ -5,7 +5,6 @@ import {
   Flex,
   Heading,
   Icon,
-  IconButton,
   Spinner,
   Table,
   Tbody,
@@ -17,33 +16,25 @@ import {
   useBreakpointValue,
 } from "@chakra-ui/react";
 import Link from "next/link";
-import React, { useEffect } from "react";
+import React from "react";
+import { useState } from "react";
 import { RiAddLine, RiPencilLine } from "react-icons/ri";
+import { useQuery } from "react-query";
 import Header from "../../components/Header";
 import Pagination from "../../components/Pagination";
 import Sidebar from "../../components/Sidebar";
-import { useQuery } from "react-query";
+import { api } from "../../services/api";
+import { useUsers } from "../../services/hooks/useUsers";
+import { User } from "../../services/hooks/useUsers";
 
 const UserList: React.FC = () => {
-  const { data, isLoading, error } = useQuery("users", async () => {
-    const response = await fetch("http://localhost:3000/api/users");
-    const data = await response.json();
-
-    return data;
-  });
-
-  console.log(data);
+  const [page,setPage] = useState(1)
+  const { data, isLoading, isFetching, error } = useUsers(page);
 
   const isWideVersion = useBreakpointValue({
     base: false,
     lg: true,
   });
-
-  useEffect(() => {
-    fetch("http://localhost:3000/api/users").then((response) =>
-      response.json().then((response) => console.log(response))
-    );
-  }, []);
 
   return (
     <Box>
@@ -54,6 +45,9 @@ const UserList: React.FC = () => {
           <Flex mb="8" justify="space-between" align="center">
             <Heading size="lg" fontWeight="normal">
               Usuários
+              {!isLoading && isFetching && (
+                <Spinner size="sm" color="gray.500" ml="4" />
+              )}
             </Heading>
             <Link href="/users/create" passHref>
               <Button
@@ -90,90 +84,42 @@ const UserList: React.FC = () => {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  <Tr>
-                    <Td px={["4", "4", "6"]}>
-                      <Checkbox colorScheme="pink" />
-                    </Td>
-                    <Td px={["4", "4", "6"]}>
-                      <Box>
-                        <Text fontWeight="bold">Amanda Carvalho</Text>
-                        <Text fontSize="sm" color="gray.300">
-                          amanda.carvalho@gmail.com
-                        </Text>
-                      </Box>
-                    </Td>
-                    {isWideVersion && <Td> 04 de Abril, 2021</Td>}
-                    <Td>
-                      {isWideVersion && (
-                        <Button
-                          as="a"
-                          size="sm"
-                          fontSize="sm"
-                          colorScheme="purple"
-                          leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
-                        >
-                          Editar
-                        </Button>
-                      )}
-                    </Td>
-                  </Tr>
-                  <Tr>
-                    <Td px={["4", "4", "6"]}>
-                      <Checkbox colorScheme="pink" />
-                    </Td>
-                    <Td px={["4", "4", "6"]}>
-                      <Box>
-                        <Text fontWeight="bold">Amanda Carvalho</Text>
-                        <Text fontSize="sm" color="gray.300">
-                          amanda.carvalho@gmail.com
-                        </Text>
-                      </Box>
-                    </Td>
-                    {isWideVersion && <Td> 04 de Abril, 2021</Td>}
-                    <Td>
-                      {isWideVersion && (
-                        <Button
-                          as="a"
-                          size="sm"
-                          fontSize="sm"
-                          colorScheme="purple"
-                          leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
-                        >
-                          Editar
-                        </Button>
-                      )}
-                    </Td>
-                  </Tr>
-                  <Tr>
-                    <Td px={["4", "4", "6"]}>
-                      <Checkbox colorScheme="pink" />
-                    </Td>
-                    <Td px={["4", "4", "6"]}>
-                      <Box>
-                        <Text fontWeight="bold">Amanda Carvalho</Text>
-                        <Text fontSize="sm" color="gray.300">
-                          amanda.carvalho@gmail.com
-                        </Text>
-                      </Box>
-                    </Td>
-                    {isWideVersion && <Td> 04 de Abril, 2021</Td>}
-                    <Td>
-                      {isWideVersion && (
-                        <Button
-                          as="a"
-                          size="sm"
-                          fontSize="sm"
-                          colorScheme="purple"
-                          leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
-                        >
-                          Editar
-                        </Button>
-                      )}
-                    </Td>
-                  </Tr>
+                  {data.users.map((user: User) => (
+                    <Tr key={user.id}>
+                      <Td px={["4", "4", "6"]}>
+                        <Checkbox colorScheme="pink" />
+                      </Td>
+                      <Td px={["4", "4", "6"]}>
+                        <Box>
+                          <Text fontWeight="bold">{user.name}</Text>
+                          <Text fontSize="sm" color="gray.300">
+                            {user.email}
+                          </Text>
+                        </Box>
+                      </Td>
+                      {isWideVersion && <Td> {user.createdAt}</Td>}
+                      <Td>
+                        {isWideVersion && (
+                          <Button
+                            as="a"
+                            size="sm"
+                            fontSize="sm"
+                            colorScheme="purple"
+                            leftIcon={<Icon as={RiPencilLine} fontSize="16" />}
+                          >
+                            Editar
+                          </Button>
+                        )}
+                      </Td>
+                    </Tr>
+                  ))}
                 </Tbody>
               </Table>
-              <Pagination />
+              <Pagination
+                totalCountRegisters={data.totalCount}
+                currentPage={page}
+                onPageChange={setPage}
+              />
             </>
           )}
         </Box>
