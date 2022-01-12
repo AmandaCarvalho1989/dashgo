@@ -5,6 +5,7 @@ import {
   Flex,
   Heading,
   Icon,
+  Link,
   Spinner,
   Table,
   Tbody,
@@ -15,7 +16,8 @@ import {
   Tr,
   useBreakpointValue,
 } from "@chakra-ui/react";
-import Link from "next/link";
+import { GetServerSideProps } from "next";
+import NextLink from "next/link";
 import React from "react";
 import { useState } from "react";
 import { RiAddLine, RiPencilLine } from "react-icons/ri";
@@ -24,17 +26,31 @@ import Header from "../../components/Header";
 import Pagination from "../../components/Pagination";
 import Sidebar from "../../components/Sidebar";
 import { api } from "../../services/api";
-import { useUsers } from "../../services/hooks/useUsers";
+import { getUsers, useUsers } from "../../services/hooks/useUsers";
 import { User } from "../../services/hooks/useUsers";
+import { queryClient } from "../../services/queryClient";
 
 const UserList: React.FC = () => {
-  const [page,setPage] = useState(1)
+  const [page, setPage] = useState(1);
   const { data, isLoading, isFetching, error } = useUsers(page);
 
   const isWideVersion = useBreakpointValue({
     base: false,
     lg: true,
   });
+
+  const handlePrefetchUser = async (userId: string) => {
+    await queryClient.prefetchQuery(
+      ["user", userId],
+      async () => {
+        const response = await api.get(`users/${userId}`);
+        return response.data;
+      },
+      {
+        staleTime: 1000 * 60 * 10, // 10 minutos
+      }
+    );
+  };
 
   return (
     <Box>
@@ -49,7 +65,7 @@ const UserList: React.FC = () => {
                 <Spinner size="sm" color="gray.500" ml="4" />
               )}
             </Heading>
-            <Link href="/users/create" passHref>
+            <NextLink href="/users/create" passHref>
               <Button
                 as="a"
                 size="sm"
@@ -59,7 +75,7 @@ const UserList: React.FC = () => {
               >
                 Criar usuário
               </Button>
-            </Link>
+            </NextLink>
           </Flex>
 
           {isLoading ? (
@@ -84,6 +100,7 @@ const UserList: React.FC = () => {
                   </Tr>
                 </Thead>
                 <Tbody>
+                  {/* @ts-ignore */}
                   {data.users.map((user: User) => (
                     <Tr key={user.id}>
                       <Td px={["4", "4", "6"]}>
@@ -91,7 +108,12 @@ const UserList: React.FC = () => {
                       </Td>
                       <Td px={["4", "4", "6"]}>
                         <Box>
-                          <Text fontWeight="bold">{user.name}</Text>
+                          <Link
+                            color="purple.400"
+                            onMouseEnter={() => handlePrefetchUser(user.id)}
+                          >
+                            <Text fontWeight="bold">{user.name}</Text>
+                          </Link>
                           <Text fontSize="sm" color="gray.300">
                             {user.email}
                           </Text>
@@ -116,6 +138,7 @@ const UserList: React.FC = () => {
                 </Tbody>
               </Table>
               <Pagination
+                //@ts-ignore
                 totalCountRegisters={data.totalCount}
                 currentPage={page}
                 onPageChange={setPage}
@@ -129,3 +152,13 @@ const UserList: React.FC = () => {
 };
 
 export default UserList;
+
+// export const getServerSideProps: GetServerSideProps = async () => {
+//   const { users, totalCount } = await getUsers(1);
+
+//   return {
+//     props: {
+//       users,
+//     },
+//   };
+// };

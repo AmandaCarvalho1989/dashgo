@@ -1,16 +1,15 @@
-import { AppProps } from "next/app";
 import { ChakraProvider } from "@chakra-ui/react";
-import { theme } from "../styles/theme";
+import { AppProps } from "next/app";
+import { QueryClientProvider } from "react-query";
+import { ReactQueryDevtools } from 'react-query/devtools';
 import { SidebarDrawerProvider } from "../context/SidebarDrawerContext";
 import { makeServer } from "../services/mirage";
-import { ReactQueryDevtools } from 'react-query/devtools'
-import { QueryClient, QueryClientProvider } from "react-query";
+import { queryClient } from "../services/queryClient";
+import { theme } from "../styles/theme";
 
 if (process.env.NODE_ENV === "development") {
   makeServer();
 }
-
-const queryClient = new QueryClient()
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
